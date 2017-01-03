@@ -1,5 +1,54 @@
 #include <stdlib.h>
 #include "utils.h"
+#include <node_object_wrap.h>
+
+class LuaFunc : public node::ObjectWrap {
+public:
+    explicit LuaFunc(lua_State* lua) :
+        m_lua(lua)
+    {
+        m_ref = luaL_ref(m_lua, LUA_REGISTRYINDEX);
+    }
+
+    ~LuaFunc()
+    {
+        luaL_unref(m_lua, LUA_REGISTRYINDEX, m_ref);
+    }
+
+    v8::Local<v8::Object> Wrap(v8::Isolate* isolate)
+    {
+        v8::Local<v8::ObjectTemplate> tpl = v8::ObjectTemplate::New(isolate);
+        tpl->SetInternalFieldCount(1);
+        v8::Local<v8::Object> obj = tpl->NewInstance();
+        node::ObjectWrap::Wrap(obj);
+        return obj;
+    }
+
+    lua_State* m_lua;
+    int m_ref;
+};
+
+static void lua_call_func(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::Isolate* isolate = args.GetIsolate();
+    v8::HandleScope scope(isolate);
+
+    LuaFunc* obj = node::ObjectWrap::Unwrap<LuaFunc>(args.Data().As<v8::Object>());
+    lua_rawgeti(obj->m_lua, LUA_REGISTRYINDEX, obj->m_ref);
+    int nargs = args.Length();
+    for( int i = 0; i < nargs; i++ )
+    {
+        push_value_to_lua(isolate, obj->m_lua, args[i]);
+    }
+    if( lua_pcall(obj->m_lua, nargs, 1, 0) != 0 )
+    {
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, lua_tostring(obj->m_lua, -1))));
+        lua_pop(obj->m_lua, 1);
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+    args.GetReturnValue().Set(lua_to_value(isolate, obj->m_lua, -1));
+    lua_pop(obj->m_lua, 1);
+}
 
 char * get_str(v8::Isolate* isolate, v8::Local<v8::Value> val){
   if(!val->IsString()){
@@ -36,6 +85,13 @@ v8::Local<v8::Value> lua_to_value(v8::Isolate* isolate, lua_State* L, int i){
         lua_pop(L, 1);
       }
       return obj;
+      break;
+    }
+  case LUA_TFUNCTION:
+    {
+      lua_pushvalue(L, i);
+      LuaFunc* func = new LuaFunc(L);
+      return v8::Local<v8::Function>::New(isolate, v8::Function::New(isolate, lua_call_func, func->Wrap(isolate)));
       break;
     }
   default:
