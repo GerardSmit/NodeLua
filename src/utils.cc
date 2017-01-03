@@ -50,6 +50,14 @@ static void lua_call_func(const v8::FunctionCallbackInfo<v8::Value>& args) {
     lua_pop(obj->m_lua, 1);
 }
 
+static v8::Local<v8::Value> stringify(v8::Isolate* isolate, v8::Local<v8::Value> value) {
+  v8::Local<v8::Object> global = isolate->GetCurrentContext()->Global();
+  v8::Local<v8::Object> JSON = v8::Local<v8::Object>::Cast(global->Get(v8::String::NewFromUtf8(isolate, "JSON")));
+  v8::Local<v8::Function> stringify = v8::Local<v8::Function>::Cast(JSON->Get(v8::String::NewFromUtf8(isolate, "stringify")));
+  v8::Local<v8::Value> args[] = { value };
+  return v8::Local<v8::String>::Cast(stringify->Call(JSON, 1, args));
+}
+
 char * get_str(v8::Isolate* isolate, v8::Local<v8::Value> val){
   if(!val->IsString()){
     isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Argument Must Be A String")));
@@ -79,10 +87,14 @@ v8::Local<v8::Value> lua_to_value(v8::Isolate* isolate, lua_State* L, int i){
       v8::Local<v8::Object> obj = v8::Object::New(isolate);
       lua_pushnil(L);
       while(lua_next(L, -2) != 0){
-        v8::Local<v8::Value> key = lua_to_value(isolate, L, -2);
         v8::Local<v8::Value> value = lua_to_value(isolate, L, -1);
-        obj->Set(key, value);
         lua_pop(L, 1);
+        v8::Local<v8::Value> key = lua_to_value(isolate, L, -1);
+        if(lua_type(L, -1) == LUA_TTABLE)
+        {
+          key = stringify(isolate, key);
+        }
+        obj->Set(key, value);
       }
       return obj;
       break;
