@@ -9,45 +9,45 @@ extern "C"{
 
 using namespace v8;
 
-void init_info_constants(Handle<Object> target){
-  Local<Object> constants = Object::New();
-  constants->Set(String::NewSymbol("VERSION"), String::New(LUA_VERSION));
-  constants->Set(String::NewSymbol("VERSION_NUM"), Number::New(LUA_VERSION_NUM));
-  constants->Set(String::NewSymbol("COPYRIGHT"), String::New(LUA_COPYRIGHT));
-  constants->Set(String::NewSymbol("AUTHORS"), String::New(LUA_AUTHORS));
-  target->Set(String::NewSymbol("INFO"), constants);
+void init_info_constants(v8::Isolate* isolate, v8::Local<v8::Object> module){
+  Local<Object> constants = Object::New(isolate);
+  constants->Set(String::NewFromUtf8(isolate, "VERSION"), String::NewFromUtf8(isolate, LUA_VERSION));
+  constants->Set(String::NewFromUtf8(isolate, "VERSION_NUM"), Number::New(isolate, LUA_VERSION_NUM));
+  constants->Set(String::NewFromUtf8(isolate, "COPYRIGHT"), String::NewFromUtf8(isolate, LUA_COPYRIGHT));
+  constants->Set(String::NewFromUtf8(isolate, "AUTHORS"), String::NewFromUtf8(isolate, LUA_AUTHORS));
+  module->Set(String::NewFromUtf8(isolate, "INFO"), constants);
 }
 
 
-void init_status_constants(Handle<Object> target){
-  Local<Object> constants = Object::New();
-  constants->Set(String::NewSymbol("YIELD"), Number::New(LUA_YIELD));
-  constants->Set(String::NewSymbol("ERRRUN"), Number::New(LUA_ERRRUN));
-  constants->Set(String::NewSymbol("ERRSYNTAX"), Number::New(LUA_ERRSYNTAX));
-  constants->Set(String::NewSymbol("ERRMEM"), Number::New(LUA_ERRMEM));
-  constants->Set(String::NewSymbol("ERRERR"), Number::New(LUA_ERRERR));
-  target->Set(String::NewSymbol("STATUS"), constants);
+void init_status_constants(v8::Isolate* isolate, v8::Local<v8::Object> module){
+  Local<Object> constants = Object::New(isolate);
+  constants->Set(String::NewFromUtf8(isolate, "YIELD"), Number::New(isolate, LUA_YIELD));
+  constants->Set(String::NewFromUtf8(isolate, "ERRRUN"), Number::New(isolate, LUA_ERRRUN));
+  constants->Set(String::NewFromUtf8(isolate, "ERRSYNTAX"), Number::New(isolate, LUA_ERRSYNTAX));
+  constants->Set(String::NewFromUtf8(isolate, "ERRMEM"), Number::New(isolate, LUA_ERRMEM));
+  constants->Set(String::NewFromUtf8(isolate, "ERRERR"), Number::New(isolate, LUA_ERRERR));
+  module->Set(String::NewFromUtf8(isolate, "STATUS"), constants);
 }
 
 
-void init_gc_constants(Handle<Object> target){
-  Local<Object> constants = Object::New();
-  constants->Set(String::NewSymbol("STOP"), Number::New(LUA_GCSTOP));
-  constants->Set(String::NewSymbol("RESTART"), Number::New(LUA_GCRESTART));
-  constants->Set(String::NewSymbol("COLLECT"), Number::New(LUA_GCCOLLECT));
-  constants->Set(String::NewSymbol("COUNT"), Number::New(LUA_GCCOUNT));
-  constants->Set(String::NewSymbol("COUNTB"), Number::New(LUA_GCCOUNTB));
-  constants->Set(String::NewSymbol("STEP"), Number::New(LUA_GCSTEP));
-  constants->Set(String::NewSymbol("SETPAUSE"), Number::New(LUA_GCSETPAUSE));
-  constants->Set(String::NewSymbol("SETSTEPMUL"), Number::New(LUA_GCSETSTEPMUL));
-  target->Set(String::NewSymbol("GC"), constants);
+void init_gc_constants(v8::Isolate* isolate, v8::Local<v8::Object> module){
+  Local<Object> constants = Object::New(isolate);
+  constants->Set(String::NewFromUtf8(isolate, "STOP"), Number::New(isolate, LUA_GCSTOP));
+  constants->Set(String::NewFromUtf8(isolate, "RESTART"), Number::New(isolate, LUA_GCRESTART));
+  constants->Set(String::NewFromUtf8(isolate, "COLLECT"), Number::New(isolate, LUA_GCCOLLECT));
+  constants->Set(String::NewFromUtf8(isolate, "COUNT"), Number::New(isolate, LUA_GCCOUNT));
+  constants->Set(String::NewFromUtf8(isolate, "COUNTB"), Number::New(isolate, LUA_GCCOUNTB));
+  constants->Set(String::NewFromUtf8(isolate, "STEP"), Number::New(isolate, LUA_GCSTEP));
+  constants->Set(String::NewFromUtf8(isolate, "SETPAUSE"), Number::New(isolate, LUA_GCSETPAUSE));
+  constants->Set(String::NewFromUtf8(isolate, "SETSTEPMUL"), Number::New(isolate, LUA_GCSETSTEPMUL));
+  module->Set(String::NewFromUtf8(isolate, "GC"), constants);
 }
 
 
-void init(Handle<Object> target) {
-  LuaState::Init(target);
-  init_gc_constants(target);
-  init_status_constants(target);
-  init_info_constants(target);
+void init( v8::Local<v8::Object> exports, v8::Local<v8::Object> module) {
+  LuaState::Init(exports, module);
+  init_gc_constants(exports->GetIsolate(), exports);
+  init_status_constants(exports->GetIsolate(), exports);
+  init_info_constants(exports->GetIsolate(), exports);
 }
 NODE_MODULE(nodelua, init)

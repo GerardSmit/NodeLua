@@ -3,6 +3,7 @@
 
 #include <map>
 #include <node.h>
+#include <node_object_wrap.h>
 
 #include "utils.h"
 
@@ -17,39 +18,39 @@ class LuaState : public node::ObjectWrap{
   lua_State* lua_;
   char* name_;
 
-  static void Init(v8::Handle<v8::Object> target);
+  static void Init( v8::Local<v8::Object> exports, v8::Local<v8::Object> module);
   static int CallFunction(lua_State* L);
 
  private:
   LuaState();
   ~LuaState();
 
-  static v8::Handle<v8::Value> New(const v8::Arguments& args);
-  static v8::Handle<v8::Value> Close(const v8::Arguments& args);
-  static v8::Handle<v8::Value> GetName(const v8::Arguments& args);
+  static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void Close(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void GetName(const v8::FunctionCallbackInfo<v8::Value>& args);
 
-  static v8::Handle<v8::Value> CollectGarbage(const v8::Arguments& args);
-  static v8::Handle<v8::Value> CollectGarbageSync(const v8::Arguments& args);
+  static void CollectGarbage(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void CollectGarbageSync(const v8::FunctionCallbackInfo<v8::Value>& args);
 
-  static v8::Handle<v8::Value> Status(const v8::Arguments& args);
-  static v8::Handle<v8::Value> StatusSync(const v8::Arguments& args);
+  static void Status(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void StatusSync(const v8::FunctionCallbackInfo<v8::Value>& args);
 
 
-  static v8::Handle<v8::Value> DoFileSync(const v8::Arguments& args);
-  static v8::Handle<v8::Value> DoFile(const v8::Arguments& args);
+  static void DoFileSync(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void DoFile(const v8::FunctionCallbackInfo<v8::Value>& args);
 
-  static v8::Handle<v8::Value> DoStringSync(const v8::Arguments& args);
-  static v8::Handle<v8::Value> DoString(const v8::Arguments& args);
+  static void DoStringSync(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void DoString(const v8::FunctionCallbackInfo<v8::Value>& args);
 
-  static v8::Handle<v8::Value> SetGlobal(const v8::Arguments& args);
-  static v8::Handle<v8::Value> GetGlobal(const v8::Arguments& args);
+  static void SetGlobal(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void GetGlobal(const v8::FunctionCallbackInfo<v8::Value>& args);
 
-  static v8::Handle<v8::Value> RegisterFunction(const v8::Arguments& args);
+  static void RegisterFunction(const v8::FunctionCallbackInfo<v8::Value>& args);
 
-  static v8::Handle<v8::Value> Push(const v8::Arguments& args);
-  static v8::Handle<v8::Value> Pop(const v8::Arguments& args);
-  static v8::Handle<v8::Value> GetTop(const v8::Arguments& args);
-  static v8::Handle<v8::Value> SetTop(const v8::Arguments& args);
-  static v8::Handle<v8::Value> Replace(const v8::Arguments& args);
+  static void Push(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void Pop(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void GetTop(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void SetTop(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void Replace(const v8::FunctionCallbackInfo<v8::Value>& args);
 };
 #endif
