@@ -3,7 +3,7 @@
     {
       "target_name": "nodelua",
       "variables": {
-        "lua_include": "<!(find /usr/include /usr/local/include $NODELUA_INCLUDE -name lua.h | sed s/lua.h//)"
+        "lua_include": "<!(find $NODELUA_INCLUDE /usr/include /usr/local/include -name lua.h | sed s/lua.h//)"
         },
       "sources": [
         "src/utils.cc",
