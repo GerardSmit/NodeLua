@@ -1,6 +1,6 @@
 NodeLua
 ======
-**This project is no longer maintained.**
+**This fork is updated to compile with Node.JS 4.0.0+**
 
 NodeLua is a module to expose Lua bindings to Node.JS.
 
