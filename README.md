@@ -11,6 +11,7 @@ This is still a work in progress, collaborators welcome.
 Requires Lua 5.1, will *not* work with 5.2
 
 Lua and it's C libraries are required for this module to work.
+( LuaJIT works and is preffered for maximum performance )
 
 ```bash
 npm install nodelua
