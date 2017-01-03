@@ -106,6 +106,7 @@ void async_after(uv_work_t *req, int status){
     argv[0] = Local<Value>::New(isolate, Undefined(isolate));
     if(lua_gettop(baton->state->lua_)){
       argv[1] = lua_to_value(isolate, baton->state->lua_, -1);
+      lua_pop(baton->state->lua_, 1);
     } else{
       argv[1] = Local<Value>::New(isolate, Undefined(isolate));
     }
@@ -187,6 +188,7 @@ int LuaState::CallFunction(lua_State* L){
       int i;
       for(i = 1; i <= n; ++i){
         argv[i - 1] = lua_to_value(isolate, L, i);
+        lua_pop(L, 1);
       }
 
       Handle<Value> ret_val = Undefined(isolate);
@@ -269,6 +271,7 @@ void LuaState::DoFileSync(const v8::FunctionCallbackInfo<v8::Value>& args){
 
   if(lua_gettop(obj->lua_)){
     args.GetReturnValue().Set(lua_to_value(isolate, obj->lua_, -1));
+    lua_pop(obj->lua_, 1);
   } else{
     args.GetReturnValue().SetUndefined();
   }
@@ -342,6 +345,7 @@ void LuaState::DoStringSync(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
   if(lua_gettop(obj->lua_)){
     args.GetReturnValue().Set( lua_to_value( isolate, obj->lua_, -1 ) );
+    lua_pop(obj->lua_, 1);
   } else{
     args.GetReturnValue().SetUndefined();
   }
@@ -442,6 +446,7 @@ void LuaState::GetGlobal(const v8::FunctionCallbackInfo<v8::Value>& args) {
   free(global_name);
 
   Local<Value> val = lua_to_value(isolate, obj->lua_, -1);
+  lua_pop(obj->lua_, 1);
 
   args.GetReturnValue().Set( val );
 }
