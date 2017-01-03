@@ -119,6 +119,7 @@ void async_after(uv_work_t *req, int status){
   }
 
   baton->callback.Reset();
+  free(baton->data);
   delete baton;
   delete req;
 
@@ -128,8 +129,16 @@ void async_after(uv_work_t *req, int status){
 }
 
 
-LuaState::LuaState(){};
-LuaState::~LuaState(){};
+LuaState::LuaState()
+    : lua_(NULL)
+    , name_(NULL)
+{
+}
+
+LuaState::~LuaState()
+{
+    free(name_);
+}
 
 
 void LuaState::Init( v8::Local<v8::Object> exports, v8::Local<v8::Object> module ){
@@ -250,11 +259,13 @@ void LuaState::DoFileSync(const v8::FunctionCallbackInfo<v8::Value>& args){
 
   LuaState* obj = ObjectWrap::Unwrap<LuaState>(args.This());
   if(luaL_dofile(obj->lua_, file_name)){
+    free(file_name);
     char buf[1000];
     sprintf(buf, "Exception Of File %s Has Failed:\n%s\n", file_name, lua_tostring(obj->lua_, -1));
     isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, buf)));
     return;
   }
+  free(file_name);
 
   if(lua_gettop(obj->lua_)){
     args.GetReturnValue().Set(lua_to_value(isolate, obj->lua_, -1));
@@ -320,12 +331,14 @@ void LuaState::DoStringSync(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
   LuaState* obj = ObjectWrap::Unwrap<LuaState>(args.This());
   if(luaL_dostring(obj->lua_, lua_code)){
+    free(lua_code);
     char buf[1000];
     sprintf(buf, "Execution Of Lua Code Has Failed:\n%s\n", lua_tostring(obj->lua_, -1));
     isolate->ThrowException(Exception::Error(String::NewFromUtf8(isolate, buf)));
     args.GetReturnValue().SetUndefined();
     return;
   }
+  free(lua_code);
 
   if(lua_gettop(obj->lua_)){
     args.GetReturnValue().Set( lua_to_value( isolate, obj->lua_, -1 ) );
@@ -400,6 +413,7 @@ void LuaState::SetGlobal(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
   push_value_to_lua(isolate, obj->lua_, args[1]);
   lua_setglobal(obj->lua_, global_name);
+  free(global_name);
 
   args.GetReturnValue().SetUndefined();
 }
@@ -425,6 +439,7 @@ void LuaState::GetGlobal(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
   LuaState* obj = ObjectWrap::Unwrap<LuaState>(args.This());
   lua_getglobal(obj->lua_, global_name);
+  free(global_name);
 
   Local<Value> val = lua_to_value(isolate, obj->lua_, -1);
 
@@ -588,6 +603,7 @@ void LuaState::RegisterFunction(const v8::FunctionCallbackInfo<v8::Value>& args)
   free(name);
   lua_pushcclosure(obj->lua_, CallFunction, 1);
   lua_setglobal(obj->lua_, func_name);
+  free(func_name);
 
   args.GetReturnValue().SetUndefined();
 }

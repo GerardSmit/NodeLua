@@ -114,7 +114,9 @@ v8::Local<v8::Value> lua_to_value(v8::Isolate* isolate, lua_State* L, int i){
 
 void push_value_to_lua(v8::Isolate* isolate, lua_State* L, v8::Handle<v8::Value> value){
   if(value->IsString()){
-    lua_pushstring(L, get_str(isolate, v8::Local<v8::Value>::New(isolate, value)));
+    char * s = get_str(isolate, v8::Local<v8::Value>::New(isolate, value));
+    lua_pushstring(L, s);
+    free(s);
   }else if(value->IsNumber()){
     int i_value = value->NumberValue(isolate->GetCurrentContext()).FromJust();
     lua_pushinteger(L, i_value);
