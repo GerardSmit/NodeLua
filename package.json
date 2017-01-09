@@ -17,7 +17,8 @@
   },
   "author": "Brett Langdon <brett@blangdon.com> (http://www.brett.is)",
   "contributors": [
-    "York Gu <gyq5319920@gmail.com> (http://blog.yorkgu.me)"
+    "York Gu <gyq5319920@gmail.com> (http://blog.yorkgu.me)",
+    "Stefan Olczak <stefan.olczak@game-lion.com>"
   ],
   "license": "MIT",
   "gypfile": true,
