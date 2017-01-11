@@ -138,9 +138,8 @@ void push_value_to_lua(v8::Isolate* isolate, lua_State* L, v8::Handle<v8::Value>
     v8::Local<v8::Array> keys = obj->GetPropertyNames();
     for(uint32_t i = 0; i < keys->Length(); ++i){
       v8::Local<v8::Value> key = keys->Get(i);
-      v8::Local<v8::Value> val = obj->Get(key);
       push_value_to_lua(isolate, L, key);
-      push_value_to_lua(isolate, L, val);
+      push_value_to_lua(isolate, L, obj->Get(key));
       lua_settable(L, -3);
     }
   }else{
