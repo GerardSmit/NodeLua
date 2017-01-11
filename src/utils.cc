@@ -123,6 +123,15 @@ void push_value_to_lua(v8::Isolate* isolate, lua_State* L, v8::Handle<v8::Value>
   }else if(value->IsBoolean()){
     int b_value = (int)value->BooleanValue(isolate->GetCurrentContext()).FromJust();
     lua_pushboolean(L, b_value);
+  }else if(value->IsMap()) {
+    lua_newtable(L);
+    v8::Local<v8::Array> data = value->ToObject().As<v8::Map>()->AsArray();
+    for(uint32_t i = 0; i < data->Length(); i += 2)
+    {
+        push_value_to_lua(isolate, L, data->Get(i));
+        push_value_to_lua(isolate, L, data->Get(i + 1));
+        lua_settable(L, -3);
+    }
   }else if(value->IsObject()){
     lua_newtable(L);
     v8::Local<v8::Object> obj = value->ToObject();
