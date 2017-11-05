@@ -1,23 +1,87 @@
 {
-  "targets": [
-    {
-      "target_name": "nodelua",
-      "variables": {
-        "lua_include": "<!(find $NODELUA_INCLUDE /usr/include /usr/local/include -name lua.h | sed s/lua.h//)"
-        },
-      "sources": [
-        "src/utils.cc",
-        "src/luastate.cc",
-	"src/nodelua.cc"
-	],
-      "include_dirs": [
-        "<@(lua_include)",
-        ],
-      "libraries": [
-        "<!(echo $NODELUA_FLAGS)",
-        "<!(pkg-config --libs-only-l --silence-errors lua || pkg-config --libs-only-l --silence-errors lua5.1 || echo '')",
-        "-ldl"
+	"targets":[
+		{
+			"target_name":"nodelua",
+			"variables": {
+				"lua_include": "",
+				"lib_dirs": ""
+			},
+			"sources":[
+				"src/utils.cc",
+				"src/luastate.cc",
+				"src/nodelua.cc"
+			],
+			"conditions":[
+				[
+					"OS=='win'",
+					{
+						"include_dirs":[
+							"./lua/win64"
+						],
+						"library_dirs":[
+							"./lua/win64"
+						],
+						"libraries":[
+							"lua51.lib"
+						],
+						"actions":[
+							{
+								"action_name":"move_lua",
+								"inputs":[
+									"<(module_root_dir)/lua/win64/lua51.dll"
+								],
+								"outputs":[
+									"<(module_root_dir)/build/Release/lua51.dll"
+								],
+								"action":[
+									"cp",
+									"<(module_root_dir)/lua/win64/lua51.dll",
+									"<(module_root_dir)/build/Release/lua51.dll"
+								]
+							}
+						]
+					}
+				],
+				[
+					"OS=='mac'",
+					{
+						"include_dirs":[
+							"./lua/mac/include"
+						],
+						"libraries":[
+							"../lua/mac/lib/liblua.a"
+						],
+						"actions":[
+
+						],
+						"cflags":[
+							"-std=c++11",
+							"-stdlib=libc++"
+						],
+						"xcode_settings":{
+							"CLANG_CXX_LANGUAGE_STANDARD":"c++0x",
+							"CLANG_CXX_LIBRARY":"libc++"
+						}
+					}
+				],
+				[
+					"OS=='linux'",
+					{
+						"include_dirs":[
+							"<!(find /usr/include /usr/local/include $NODELUA_INCLUDE -name lua.h | sed s/lua.h//)"
+						],
+						"library_dirs":[
+							"/usr/local/lib"
+						],
+						"libraries":[
+							"/usr/local/lib/libluajit-5.1.so"
+						],
+						"actions":[
+
+						]
+					}
+				]
+			]
+		}
 	]
-    }
-  ]
 }
