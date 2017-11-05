@@ -14,13 +14,12 @@ uv_async_t async;
 std::map<std::string, node_function*> functions;
 
 struct async_baton{
-  bool has_cb;
-  Persistent<Function> callback;
   v8::Isolate* isolate;
   char* data;
   bool error;
   char msg[1000];
   LuaState* state;
+  v8::Persistent<v8::Promise::Resolver> resolver;
 };
 
 struct simple_baton{
@@ -96,30 +95,23 @@ void async_after(uv_work_t *req, int status){
   v8::Isolate* isolate = baton->isolate;
   v8::HandleScope scope( isolate );
 
-  Local<Value> argv[2];
   const int argc = 2;
 
+  v8::Local<v8::Promise::Resolver> resolver = v8::Local<v8::Promise::Resolver>::New(isolate, baton->resolver);
   if(baton->error){
-    argv[0] = String::NewFromUtf8(isolate, baton->msg);
-    argv[1] = Local<Value>::New(isolate, Undefined(isolate));
+    resolver->Reject(String::NewFromUtf8(isolate, baton->msg));
   } else{
-    argv[0] = Local<Value>::New(isolate, Undefined(isolate));
     if(lua_gettop(baton->state->lua_)){
-      argv[1] = lua_to_value(isolate, baton->state->lua_, -1);
+      resolver->Resolve(lua_to_value(isolate, baton->state->lua_, -1));
       lua_pop(baton->state->lua_, 1);
     } else{
-      argv[1] = Local<Value>::New(isolate, Undefined(isolate));
+      resolver->Resolve(Local<Value>::New(isolate, Undefined(isolate)));
     }
   }
 
   TryCatch try_catch(isolate);
 
-  if(baton->has_cb){
-    v8::Local<v8::Function> callback = v8::Local<v8::Function>::New( baton->isolate, baton->callback );
-    callback->Call( baton->isolate->GetCurrentContext()->Global(), argc, argv);
-  }
-
-  baton->callback.Reset();
+  baton->resolver.Reset();
   free(baton->data);
   delete baton;
   delete req;
@@ -204,7 +196,6 @@ int LuaState::CallFunction(lua_State* L){
   return 1;
 }
 
-
 void LuaState::New(const v8::FunctionCallbackInfo<v8::Value>& args ){
     v8::Isolate* isolate = args.GetIsolate();
     v8::HandleScope scope(isolate);
@@ -227,6 +218,7 @@ void LuaState::New(const v8::FunctionCallbackInfo<v8::Value>& args ){
   LuaState* obj = new LuaState();
   obj->name_ = get_str( isolate, args[0]);
   obj->lua_ = lua_open();
+  luaJIT_setmode(obj->lua_, 0, LUAJIT_MODE_ENGINE|LUAJIT_MODE_ON);
   luaL_openlibs(obj->lua_);
   obj->Wrap( args.This());
 }
@@ -279,8 +271,8 @@ void LuaState::DoFileSync(const v8::FunctionCallbackInfo<v8::Value>& args){
 
 
 void LuaState::DoFile(const v8::FunctionCallbackInfo<v8::Value>& args){
-    v8::Isolate* isolate = args.GetIsolate();
-    v8::HandleScope scope(isolate);
+  v8::Isolate* isolate = args.GetIsolate();
+  v8::HandleScope scope(isolate);
 
   if(args.Length() < 1){
     isolate->ThrowException(Exception::TypeError(String::NewFromUtf8( isolate, "LuaState.doFile Requires At Least 1 Argument")));
@@ -294,12 +286,6 @@ void LuaState::DoFile(const v8::FunctionCallbackInfo<v8::Value>& args){
     return;
   }
 
-  if(args.Length() > 1 && !args[1]->IsFunction()){
-    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8( isolate, "LuaState.doFile Second Argument Must Be A Function")));
-    args.GetReturnValue().SetUndefined();
-    return;
-  }
-
   LuaState* obj = ObjectWrap::Unwrap<LuaState>(args.This());
   async_baton* baton = new async_baton();
   baton->isolate = isolate;
@@ -307,17 +293,13 @@ void LuaState::DoFile(const v8::FunctionCallbackInfo<v8::Value>& args){
   baton->state = obj;
   obj->Ref();
 
-  if(args.Length() > 1){
-    baton->has_cb = true;
-    v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast( args[1] );
-    baton->callback.Reset( isolate, callback );
-  }
+  baton->resolver.Reset(isolate, v8::Promise::Resolver::New(isolate));
+  v8::Local<v8::Promise::Resolver> resolver = v8::Local<v8::Promise::Resolver>::New(isolate, baton->resolver);
+  args.GetReturnValue().Set(resolver->GetPromise());
 
   uv_work_t *req = new uv_work_t;
   req->data = baton;
   uv_queue_work(uv_default_loop(), req, do_file, async_after);
-
-  args.GetReturnValue().SetUndefined();
 }
 
 void LuaState::DoStringSync(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -375,23 +357,13 @@ void LuaState::DoString(const v8::FunctionCallbackInfo<v8::Value>& args){
   baton->state = obj;
   obj->Ref();
 
-  if(args.Length() > 1 && !args[1]->IsFunction()){
-    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "LuaState.doString Second Argument Must Be A Function")));
-    args.GetReturnValue().SetUndefined();
-    return;
-  }
-
-  if(args.Length() > 1){
-    baton->has_cb = true;
-    v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(args[1]);
-    baton->callback.Reset(isolate, callback);
-  }
+  baton->resolver.Reset(isolate, v8::Promise::Resolver::New(isolate));
+  v8::Local<v8::Promise::Resolver> resolver = v8::Local<v8::Promise::Resolver>::New(isolate, baton->resolver);
+  args.GetReturnValue().Set(resolver->GetPromise());
 
   uv_work_t *req = new uv_work_t;
   req->data = baton;
   uv_queue_work(uv_default_loop(), req, do_string, async_after);
-
-  args.GetReturnValue().SetUndefined();
 }
 
 

@@ -106,6 +106,11 @@ v8::Local<v8::Value> lua_to_value(v8::Isolate* isolate, lua_State* L, int i){
       return v8::Local<v8::Function>::New(isolate, v8::Function::New(isolate, lua_call_func, func->Wrap(isolate)));
       break;
     }
+  case LUA_TNIL:
+    {
+      return v8::Local<v8::Primitive>::New(isolate, v8::Null(isolate));
+      break;
+    }
   default:
     return v8::Local<v8::Primitive>::New(isolate, v8::Undefined(isolate));
     break;
